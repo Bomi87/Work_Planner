@@ -1,158 +1,1099 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>근무시간 관리</title>
-  <link rel="stylesheet" href="./style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Work Time App</title>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg1: #48505f;
+      --bg2: #252b36;
+      --card: rgba(255,255,255,0.92);
+      --card2: rgba(255,255,255,0.12);
+      --text: #111827;
+      --muted: #6b7280;
+      --line: rgba(17,24,39,0.12);
+      --accent: #2563eb;
+      --accent2: #0f172a;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --white: #f9fafb;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      color: var(--white);
+      background:
+        radial-gradient(circle at 80% 10%, rgba(147,197,253,.30), transparent 30%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      cursor: pointer;
+      background: var(--accent2);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    button.secondary {
+      background: rgba(15,23,42,.12);
+      color: var(--accent2);
+      border: 1px solid rgba(15,23,42,.15);
+    }
+
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .hidden { display: none !important; }
+
+    .app {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px;
+      padding-bottom: 90px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: -.3px;
+      font-size: 21px;
+    }
+
+    .brand .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.16);
+    }
+
+    .user {
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+      text-align: right;
+      line-height: 1.35;
+      word-break: break-all;
+    }
+
+    .panel {
+      background: var(--card);
+      color: var(--text);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.20);
+      margin-bottom: 14px;
+    }
+
+    .glass {
+      background: rgba(255,255,255,.14);
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,.18);
+    }
+
+    .center {
+      min-height: 68vh;
+      display: grid;
+      place-items: center;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+    }
+
+    .login-card h1 { margin: 8px 0 8px; }
+    .login-card p { color: var(--muted); line-height: 1.55; }
+
+    .login-box {
+      display: flex;
+      justify-content: center;
+      margin: 18px 0 12px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 110px 110px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(37,99,235,.7);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1.1fr repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px;
+      background: #fff;
+      min-height: 78px;
+    }
+
+    .stat .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .stat .value {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .status-main {
+      background: linear-gradient(135deg, #e0f2fe, #fff);
+    }
+
+    .status-main .value { color: var(--danger); }
+    .status-main .value.done { color: var(--ok); }
+
+    .tabs {
+      position: fixed;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      width: min(940px, calc(100% - 24px));
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      padding: 8px;
+      border-radius: 20px;
+      background: rgba(15,23,42,.88);
+      backdrop-filter: blur(12px);
+      z-index: 20;
+      box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    }
+
+    .nav-btn {
+      border-radius: 15px;
+      padding: 10px 6px;
+      background: transparent;
+      color: rgba(255,255,255,.72);
+      font-size: 13px;
+    }
+
+    .nav-btn.active {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .work-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .work-card, .month-card {
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      padding: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .work-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .work-date { font-weight: 900; }
+    .work-type { color: var(--accent); font-weight: 800; text-align: right; }
+    .work-time { color: #374151; font-size: 14px; line-height: 1.5; }
+
+    .work-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 10px 0 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .badge.focus { background: #ecfeff; color: #0e7490; }
+    .badge.holiday { background: #fef2f2; color: #b91c1c; }
+
+    .work-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .work-actions button {
+      padding: 8px 11px;
+      border-radius: 11px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .form-grid .full { grid-column: 1 / -1; }
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: #4b5563;
+      font-weight: 800;
+    }
+
+    textarea { min-height: 90px; resize: vertical; }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .form-actions button { flex: 1; }
+
+    .monthly-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .month-card .mon {
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(15,23,42,.92);
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 999px;
+      z-index: 99;
+      transition: .18s ease;
+      max-width: calc(100% - 28px);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .floating-add {
+      position: fixed;
+      right: 18px;
+      bottom: 88px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--accent);
+      font-size: 28px;
+      box-shadow: 0 14px 35px rgba(37,99,235,.38);
+      z-index: 15;
+    }
+
+    .small-error {
+      white-space: pre-wrap;
+      text-align: left;
+      background: #fef2f2;
+      color: #991b1b;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .app { padding: 12px; padding-bottom: 88px; }
+      .topbar { align-items: flex-start; }
+      .brand { font-size: 18px; }
+      .user { max-width: 52%; }
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+      .controls button, .controls select#userSelect { grid-column: 1 / -1; }
+      .status-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .status-main { grid-column: 1 / -1; }
+      .form-grid { grid-template-columns: 1fr; }
+      .monthly-list { grid-template-columns: 1fr; }
+      .tabs { grid-template-columns: repeat(5, 1fr); }
+      .nav-btn { font-size: 12px; padding: 9px 3px; }
+    }
+  </style>
 </head>
+
 <body>
-  <div class="app">
-    <section id="blockedView" class="center-view hidden">
-      <div class="message-card">
-        <h1>접근 불가</h1>
-        <p id="blockedMessage">승인된 Gmail 계정으로 접속해 주세요.</p>
-        <button id="retryBtn">다시 시도</button>
+  <div id="toast" class="toast"></div>
+
+  <div id="loginView" class="center app">
+    <div class="panel login-card">
+      <div class="brand" style="justify-content:center;">
+        <div class="logo">🕘</div>
+        <div>Work Time App</div>
       </div>
-    </section>
-
-    <section id="loadingView" class="center-view">
-      <div class="message-card">
-        <h1>근무시간 관리</h1>
-        <p>Gmail 계정 확인 중...</p>
+      <h1>Google 계정으로 로그인</h1>
+      <p>승인된 계정만 근무기록을 조회/등록할 수 있습니다.</p>
+      <div id="googleLoginBox" class="login-box"></div>
+      <div class="hint">
+        로그인이 안 되면 Google Cloud OAuth Client의 승인된 JavaScript origin에 현재 GitHub Pages 주소가 등록되어 있는지 확인하세요.
       </div>
-    </section>
-
-    <section id="mainView" class="hidden">
-      <header class="topbar">
-        <button id="menuBtn" class="icon">☰</button>
-        <div class="title-wrap">
-          <div class="app-title">근무시간 관리</div>
-          <div id="userInfo" class="user-info"></div>
-        </div>
-        <button id="refreshBtn" class="icon">⟳</button>
-      </header>
-
-      <section class="filters">
-        <select id="userSelect" class="hidden"></select>
-        <input id="yearInput" type="number" min="2020" max="2099" />
-        <select id="monthSelect"></select>
-      </section>
-
-      <main>
-        <section id="tabStatus" class="tab-panel">
-          <div class="status-card">
-            <div class="label">Month</div>
-            <div id="statusMonth" class="month-text"></div>
-
-            <div class="status-emoji">😀</div>
-
-            <div class="label">Status</div>
-            <div id="statusMain" class="status-main"></div>
-
-            <div class="label detail-label">Detail</div>
-            <div class="detail-list">
-              <div>-소정근무시간: <span id="requiredText"></span></div>
-              <div>-실제등록근무시간: <span id="actualText"></span></div>
-              <div>-인정근무시간: <span id="recognizedText"></span></div>
-              <div>-FOCUS 인정시간: <span id="focusBonusText"></span></div>
-              <div>-휴게시간: <span id="breakText"></span></div>
-              <div>-공휴일근무시간: <span id="holidayWorkText"></span></div>
-              <div>-초과근무시간: <span id="overtimeText"></span></div>
-            </div>
-          </div>
-        </section>
-
-        <section id="tabList" class="tab-panel hidden">
-          <div id="workList" class="work-list"></div>
-          <button id="floatingAddBtn" class="fab">✎</button>
-        </section>
-
-        <section id="tabForm" class="tab-panel hidden">
-          <form id="workForm" class="form-card">
-            <input id="recordId" type="hidden" />
-
-            <div class="form-title-row">
-              <button type="button" id="backFromFormBtn" class="back-btn">←</button>
-              <h2 id="formTitle">근무등록</h2>
-            </div>
-
-            <label>
-              Start Date
-              <input id="dateInput" type="date" required />
-            </label>
-
-            <label>
-              근무지*
-              <select id="type1Input" required></select>
-            </label>
-
-            <label>
-              Start Time*
-              <input id="start1Input" type="time" />
-            </label>
-
-            <label>
-              End Time*
-              <input id="end1Input" type="time" />
-            </label>
-
-            <label>
-              근무지(2)
-              <select id="type2Input"></select>
-            </label>
-
-            <label>
-              Start Time(2)
-              <input id="start2Input" type="time" />
-            </label>
-
-            <label>
-              End Time(2)
-              <input id="end2Input" type="time" />
-            </label>
-
-            <label>
-              Memo
-              <textarea id="memoInput" rows="3"></textarea>
-            </label>
-
-            <div class="form-actions">
-              <button type="button" id="cancelBtn" class="secondary">Cancel</button>
-              <button type="submit" class="save">Save</button>
-            </div>
-          </form>
-        </section>
-
-        <section id="tabChart" class="tab-panel hidden">
-          <div class="chart-card">
-            <h2>당월 차트</h2>
-            <canvas id="monthChart"></canvas>
-          </div>
-        </section>
-
-        <section id="tabMonthly" class="tab-panel hidden">
-          <div class="monthly-header">
-            <div class="year-small">YEAR</div>
-            <div id="monthlyTitle" class="monthly-title"></div>
-          </div>
-          <div id="monthlyList" class="monthly-list"></div>
-        </section>
-      </main>
-
-      <nav class="bottom-nav">
-        <button class="nav-btn active" data-tab="Status">🏃<span>Status</span></button>
-        <button class="nav-btn" data-tab="List">☰<span>LIST</span></button>
-        <button class="nav-btn" data-tab="Form">✎<span>근무등록</span></button>
-        <button class="nav-btn" data-tab="Chart">📉<span>당월 차트</span></button>
-        <button class="nav-btn" data-tab="Monthly">🕘<span>월별 근무시간</span></button>
-      </nav>
-    </section>
-
-    <div id="toast" class="toast"></div>
+      <div id="loginError" class="small-error hidden"></div>
+    </div>
   </div>
 
-  <script src="./script.js"></script>
+  <div id="loadingView" class="center app hidden">
+    <div class="panel login-card">
+      <h2>조회 중...</h2>
+      <p>계정 승인 및 근무 데이터를 확인하고 있습니다.</p>
+    </div>
+  </div>
+
+  <div id="blockedView" class="center app hidden">
+    <div class="panel login-card">
+      <h2>접근 불가</h2>
+      <p>계정 승인 또는 API 연결을 확인하세요.</p>
+      <div id="blockedMessage" class="small-error"></div>
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button id="retryBtn" style="flex:1;">다시 시도</button>
+        <button id="logoutBtn" class="secondary" style="flex:1;">로그아웃</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainView" class="app hidden">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">🕘</div>
+        <div>Work Time App</div>
+      </div>
+      <div id="userInfo" class="user"></div>
+    </div>
+
+    <div class="panel">
+      <div class="controls">
+        <input id="yearInput" type="number" min="2020" max="2100" inputmode="numeric">
+        <select id="monthSelect"></select>
+        <select id="userSelect" class="hidden"></select>
+        <button id="refreshBtn">조회</button>
+      </div>
+    </div>
+
+    <section id="tabStatus" class="panel">
+      <div class="section-title">
+        <h2>📌 월간 현황 <span id="statusMonth"></span></h2>
+      </div>
+      <div class="status-grid">
+        <div class="stat status-main">
+          <div class="label">상태</div>
+          <div id="statusMain" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">소정</div>
+          <div id="requiredText" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">실제</div>
+          <div id="actualText" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">인정</div>
+          <div id="recognizedText" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">초과</div>
+          <div id="overtimeText" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">FOCUS 인정</div>
+          <div id="focusBonusText" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">휴게</div>
+          <div id="breakText" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">휴일근무</div>
+          <div id="holidayWorkText" class="value">-</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tabList" class="panel hidden">
+      <div class="section-title">
+        <h2>📋 근무 목록</h2>
+        <button class="secondary" onclick="openForm()">등록</button>
+      </div>
+      <div id="workList" class="work-list"></div>
+    </section>
+
+    <section id="tabForm" class="panel hidden">
+      <div class="section-title">
+        <h2 id="formTitle">근무등록</h2>
+        <button id="backFromFormBtn" class="secondary" type="button">목록</button>
+      </div>
+
+      <form id="workForm">
+        <input id="recordId" type="hidden">
+
+        <div class="form-grid">
+          <label class="full">날짜
+            <input id="dateInput" type="date" required>
+          </label>
+
+          <label>근무유형 1
+            <select id="type1Input" required></select>
+          </label>
+          <label>근무유형 2
+            <select id="type2Input"></select>
+          </label>
+
+          <label>시작 1
+            <input id="start1Input" type="time">
+          </label>
+          <label>종료 1
+            <input id="end1Input" type="time">
+          </label>
+
+          <label>시작 2
+            <input id="start2Input" type="time">
+          </label>
+          <label>종료 2
+            <input id="end2Input" type="time">
+          </label>
+
+          <label class="full">메모
+            <textarea id="memoInput" placeholder="필요 시 메모"></textarea>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="cancelBtn" class="secondary" type="button">취소</button>
+          <button type="submit">저장</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="tabChart" class="panel hidden">
+      <div class="section-title">
+        <h2>📈 누적 그래프</h2>
+      </div>
+      <canvas id="monthChart"></canvas>
+    </section>
+
+    <section id="tabMonthly" class="panel hidden">
+      <div class="section-title">
+        <h2 id="monthlyTitle">연간 현황</h2>
+      </div>
+      <div id="monthlyList" class="monthly-list"></div>
+    </section>
+
+    <button id="floatingAddBtn" class="floating-add">+</button>
+
+    <nav class="tabs">
+      <button class="nav-btn active" data-tab="Status">현황</button>
+      <button class="nav-btn" data-tab="List">목록</button>
+      <button class="nav-btn" data-tab="Form">등록</button>
+      <button class="nav-btn" data-tab="Chart">그래프</button>
+      <button class="nav-btn" data-tab="Monthly">연간</button>
+    </nav>
+  </div>
+
+  <script>
+    /**
+     * 1) API_URL: Apps Script Web App URL 그대로 사용
+     * 2) GOOGLE_CLIENT_ID: Google Cloud Console > OAuth Client ID > Web application 값으로 교체
+     *    Authorized JavaScript origins에 GitHub Pages 주소를 등록해야 함.
+     */
+    const API_URL = 'https://script.google.com/macros/s/AKfycbztaIur35xJq5QkD3mZFAj_oxVQeqADaKB_fbLytZtapDzE5TxSRmWuqPc8_7eeJif0/exec';
+    const GOOGLE_CLIENT_ID = '434108168386-jn8hp4mflhn68n98n6m9r1nm6iv7b3qe.apps.googleusercontent.com';
+
+    let currentUser = null;
+    let workTypes = [];
+    let records = [];
+    let chart = null;
+    let idToken = '';
+
+    const $ = (id) => document.getElementById(id);
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+      setupDateInputs();
+      bindEvents();
+      showOnly('loginView');
+      waitForGoogleIdentity().then(renderGoogleButton).catch(showLoginError);
+    }
+
+    function waitForGoogleIdentity() {
+      return new Promise((resolve, reject) => {
+        let count = 0;
+        const timer = setInterval(() => {
+          count++;
+          if (window.google && google.accounts && google.accounts.id) {
+            clearInterval(timer);
+            resolve();
+          }
+          if (count > 80) {
+            clearInterval(timer);
+            reject(new Error('Google 로그인 스크립트를 불러오지 못했습니다.'));
+          }
+        }, 100);
+      });
+    }
+
+    function renderGoogleButton() {
+      if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('PUT_YOUR')) {
+        showLoginError(new Error('GOOGLE_CLIENT_ID를 입력해야 합니다. Google Cloud Console에서 Web OAuth Client ID를 만든 뒤 index.html 상단에 넣으세요.'));
+        return;
+      }
+
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: false
+      });
+
+      google.accounts.id.renderButton($('googleLoginBox'), {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'pill',
+        width: 260
+      });
+    }
+
+    async function handleCredentialResponse(response) {
+      try {
+        idToken = response.credential || '';
+        if (!idToken) throw new Error('Google ID Token을 받지 못했습니다.');
+
+        $('loginError').classList.add('hidden');
+        showOnly('loadingView');
+
+        const me = await api('me');
+
+        currentUser = me.user;
+        workTypes = me.workTypes || [];
+
+        $('userInfo').textContent = `${currentUser.name || ''} / ${currentUser.email} / ${currentUser.role}`;
+        fillWorkTypeOptions();
+        await loadUsers();
+
+        showOnly('mainView');
+        await reloadAll();
+      } catch (err) {
+        $('blockedMessage').textContent = err.message || String(err);
+        showOnly('blockedView');
+      }
+    }
+
+    function showLoginError(err) {
+      const el = $('loginError');
+      el.textContent = err.message || String(err);
+      el.classList.remove('hidden');
+    }
+
+    function showOnly(id) {
+      ['loginView', 'loadingView', 'blockedView', 'mainView'].forEach(x => $(x).classList.add('hidden'));
+      $(id).classList.remove('hidden');
+    }
+
+    function setupDateInputs() {
+      const now = new Date();
+      $('yearInput').value = now.getFullYear();
+
+      const monthSelect = $('monthSelect');
+      monthSelect.innerHTML = '';
+      for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = String(m);
+        opt.textContent = `${m}월`;
+        monthSelect.appendChild(opt);
+      }
+      monthSelect.value = String(now.getMonth() + 1);
+      $('dateInput').value = todayYmd();
+    }
+
+    function bindEvents() {
+      $('retryBtn').addEventListener('click', () => showOnly('loginView'));
+      $('logoutBtn').addEventListener('click', logout);
+      $('refreshBtn').addEventListener('click', reloadAll);
+      $('floatingAddBtn').addEventListener('click', () => openForm());
+      $('backFromFormBtn').addEventListener('click', () => switchTab('List'));
+      $('cancelBtn').addEventListener('click', () => switchTab('List'));
+
+      $('yearInput').addEventListener('change', reloadAll);
+      $('monthSelect').addEventListener('change', reloadAll);
+      $('userSelect').addEventListener('change', reloadAll);
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.tab === 'Form') openForm();
+          else switchTab(btn.dataset.tab);
+        });
+      });
+
+      $('workForm').addEventListener('submit', saveWork);
+    }
+
+    function logout() {
+      idToken = '';
+      currentUser = null;
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.disableAutoSelect();
+      }
+      showOnly('loginView');
+    }
+
+    function fillWorkTypeOptions() {
+      fillSelect($('type1Input'), workTypes, true);
+      fillSelect($('type2Input'), workTypes, false);
+    }
+
+    function fillSelect(select, values, required) {
+      select.innerHTML = '';
+
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = required ? '선택' : '선택 안 함';
+      select.appendChild(empty);
+
+      values.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        select.appendChild(opt);
+      });
+    }
+
+    async function loadUsers() {
+      const res = await api('users');
+      const select = $('userSelect');
+      select.innerHTML = '';
+
+      (res.users || []).forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.email;
+        opt.textContent = `${u.name || u.email} (${u.email})`;
+        select.appendChild(opt);
+      });
+
+      if (currentUser.isAdmin) {
+        select.classList.remove('hidden');
+      } else {
+        select.classList.add('hidden');
+      }
+    }
+
+    function getTargetEmail() {
+      return currentUser.isAdmin ? $('userSelect').value : currentUser.email;
+    }
+
+    function getYear() {
+      return Number($('yearInput').value);
+    }
+
+    function getMonth() {
+      return Number($('monthSelect').value);
+    }
+
+    async function reloadAll() {
+      try {
+        if (!currentUser) return;
+        showToast('조회 중...');
+        await Promise.all([
+          loadStatus(),
+          loadList(),
+          loadMonthly(),
+          loadChart()
+        ]);
+        showToast('조회 완료');
+      } catch (err) {
+        showToast(err.message || String(err));
+      }
+    }
+
+    async function loadStatus() {
+      const res = await api('status', {
+        email: getTargetEmail(),
+        year: getYear(),
+        month: getMonth()
+      });
+      renderStatus(res.summary);
+    }
+
+    function renderStatus(s) {
+      $('statusMonth').textContent = `${String(s.Month).padStart(2, '0')}월`;
+
+      if (s.Status === '완료') {
+        $('statusMain').textContent = '완료';
+        $('statusMain').classList.add('done');
+      } else {
+        $('statusMain').textContent = `계획필요: ${s.NeedText}`;
+        $('statusMain').classList.remove('done');
+      }
+
+      $('requiredText').textContent = s.RequiredText;
+      $('actualText').textContent = s.ActualText;
+      $('recognizedText').textContent = s.RecognizedText;
+      $('focusBonusText').textContent = s.FocusBonusText;
+      $('breakText').textContent = s.BreakText;
+      $('holidayWorkText').textContent = s.HolidayWorkText;
+      $('overtimeText').textContent = s.OvertimeText;
+    }
+
+    async function loadList() {
+      const res = await api('listWork', {
+        email: getTargetEmail(),
+        year: getYear(),
+        month: getMonth()
+      });
+      records = res.records || [];
+      renderList();
+    }
+
+    function renderList() {
+      const wrap = $('workList');
+
+      if (!records.length) {
+        wrap.innerHTML = '<div class="work-card">등록된 근무가 없습니다.</div>';
+        return;
+      }
+
+      wrap.innerHTML = records.map(r => {
+        const typeText = [r.Type1, r.Type2].filter(Boolean).join(' / ');
+        return `
+          <div class="work-card">
+            <div class="work-head">
+              <div class="work-date">${emojiFor(r)} ${escapeHtml(r.Date)}</div>
+              <div class="work-type">${escapeHtml(typeText)}</div>
+            </div>
+
+            <div class="work-time">
+              근무시간: ${escapeHtml(r.ActualText)}<br>
+              인정시간: ${escapeHtml(r.RecognizedText)}
+              ${r.BreakMinutes > 0 ? `<br>휴게시간: ${escapeHtml(r.BreakText)}` : ''}
+              ${r.FocusBonusMinutes > 0 ? `<br>FOCUS 인정: ${escapeHtml(r.FocusBonusText)}` : ''}
+            </div>
+
+            <div class="work-badges">
+              ${r.IsFocusDay ? '<span class="badge focus">FOCUS DAY</span>' : ''}
+              ${r.IsHoliday ? `<span class="badge holiday">${escapeHtml(r.HolidayName || '공휴일')}</span>` : ''}
+              ${r.Type1 === '건강검진' || r.Type2 === '건강검진' ? '<span class="badge">건강검진</span>' : ''}
+            </div>
+
+            ${r.Memo ? `<div class="work-time" style="margin-top:8px;">메모: ${escapeHtml(r.Memo)}</div>` : ''}
+
+            <div class="work-actions">
+              <button type="button" onclick="editRecord('${escapeAttr(r.ID)}')">✎</button>
+              <button type="button" class="danger" onclick="deleteRecord('${escapeAttr(r.ID)}')">🗑</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function emojiFor(r) {
+      const t = `${r.Type1} ${r.Type2}`;
+      if (t.includes('해외출장')) return '✈️';
+      if (t.includes('재택')) return '🏠';
+      if (t.includes('연차')) return '🌴';
+      if (t.includes('건강')) return '🏥';
+      if (r.IsFocusDay) return '😊';
+      return '💼';
+    }
+
+    function openForm(record = null) {
+      clearForm();
+
+      if (record) {
+        $('formTitle').textContent = '근무수정';
+        $('recordId').value = record.ID;
+        $('dateInput').value = record.Date;
+        $('type1Input').value = record.Type1;
+        $('start1Input').value = record.Start1;
+        $('end1Input').value = record.End1;
+        $('type2Input').value = record.Type2;
+        $('start2Input').value = record.Start2;
+        $('end2Input').value = record.End2;
+        $('memoInput').value = record.Memo || '';
+      } else {
+        $('formTitle').textContent = '근무등록';
+        $('dateInput').value = todayYmd();
+        $('type1Input').value = '메인오피스';
+        $('start1Input').value = '09:00';
+        $('end1Input').value = '18:00';
+      }
+
+      switchTab('Form');
+    }
+
+    function editRecord(id) {
+      const record = records.find(r => r.ID === id);
+      if (!record) return;
+      openForm(record);
+    }
+
+    async function deleteRecord(id) {
+      if (!confirm('삭제할까요?')) return;
+
+      try {
+        await api('deleteWork', { id });
+        showToast('삭제 완료');
+        await reloadAll();
+      } catch (err) {
+        alert(err.message || String(err));
+      }
+    }
+
+    async function saveWork(e) {
+      e.preventDefault();
+
+      const record = {
+        ID: $('recordId').value,
+        Email: getTargetEmail(),
+        Date: $('dateInput').value,
+        Type1: $('type1Input').value,
+        Start1: $('start1Input').value,
+        End1: $('end1Input').value,
+        Type2: $('type2Input').value,
+        Start2: $('start2Input').value,
+        End2: $('end2Input').value,
+        Memo: $('memoInput').value
+      };
+
+      try {
+        await api('saveWork', { record });
+        showToast('저장 완료');
+        clearForm();
+        switchTab('List');
+        await reloadAll();
+      } catch (err) {
+        alert(err.message || String(err));
+      }
+    }
+
+    function clearForm() {
+      $('workForm').reset();
+      $('recordId').value = '';
+      $('dateInput').value = todayYmd();
+      $('formTitle').textContent = '근무등록';
+    }
+
+    async function loadMonthly() {
+      const res = await api('monthly', {
+        email: getTargetEmail(),
+        year: getYear()
+      });
+
+      $('monthlyTitle').textContent = `😀 ${getYear()} 년`;
+
+      const months = res.months || [];
+      $('monthlyList').innerHTML = months.map(m => `
+        <div class="month-card">
+          <div class="mon">${monthName(m.Month)}</div>
+          <div>계획필요: ${escapeHtml(m.NeedText)}</div>
+          <br>
+          <div>소정근무시간: ${escapeHtml(m.RequiredText)}</div>
+          <div>실제등록근무시간: ${escapeHtml(m.ActualText)}</div>
+          <div>인정근무시간: ${escapeHtml(m.RecognizedText)}</div>
+          <div>(FOCUS 인정시간: ${escapeHtml(m.FocusBonusText)} / 초과근무시간: ${escapeHtml(m.OvertimeText)})</div>
+        </div>
+      `).join('');
+    }
+
+    function monthName(m) {
+      return ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][Number(m)-1] || String(m);
+    }
+
+    async function loadChart() {
+      const res = await api('chart', {
+        email: getTargetEmail(),
+        year: getYear(),
+        month: getMonth()
+      });
+
+      renderChart(res);
+    }
+
+    function renderChart(data) {
+      const ctx = $('monthChart');
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels || [],
+          datasets: [
+            { label: '소정 누적', data: data.required || [], tension: 0.25 },
+            { label: '실제 누적', data: data.actual || [], tension: 0.25 },
+            { label: '인정 누적', data: data.recognized || [], tension: 0.25 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { title: { display: true, text: 'Hours' } } }
+        }
+      });
+    }
+
+    function switchTab(name) {
+      ['Status', 'List', 'Form', 'Chart', 'Monthly'].forEach(t => {
+        $(`tab${t}`).classList.toggle('hidden', t !== name);
+      });
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === name);
+      });
+    }
+
+    async function api(action, data = {}) {
+      if (!API_URL || API_URL.includes('PUT_YOUR')) {
+        throw new Error('API_URL을 Apps Script Web App URL로 교체해야 합니다.');
+      }
+      if (!idToken) {
+        throw new Error('Google 로그인이 필요합니다.');
+      }
+
+      const payload = { action, idToken, ...data };
+
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+
+      const text = await res.text();
+
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        throw new Error(
+          'API 응답이 JSON이 아닙니다. Apps Script 배포 URL, 배포 권한, CORS/리디렉션 상태를 확인하세요. 응답: ' +
+          text.slice(0, 180)
+        );
+      }
+
+      if (!json.ok) throw new Error(json.error || 'API Error');
+      return json;
+    }
+
+    function todayYmd() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function showToast(message) {
+      const el = $('toast');
+      el.textContent = message;
+      el.classList.add('show');
+
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => {
+        el.classList.remove('show');
+      }, 1600);
+    }
+
+    function escapeHtml(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[c]));
+    }
+
+    function escapeAttr(v) {
+      return String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+  </script>
 </body>
 </html>
