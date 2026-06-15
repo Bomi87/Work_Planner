@@ -487,12 +487,12 @@
           <div id="overtimeText" class="value">-</div>
         </div>
         <div class="stat">
-          <div class="label">FOCUS 인정</div>
-          <div id="focusBonusText" class="value">-</div>
-        </div>
-        <div class="stat">
           <div class="label">휴게</div>
           <div id="breakText" class="value">-</div>
+        </div>
+        <div class="stat">
+          <div class="label">야간근무</div>
+          <div id="nightText" class="value">-</div>
         </div>
         <div class="stat">
           <div class="label">휴일근무</div>
@@ -587,7 +587,7 @@
      * 2) GOOGLE_CLIENT_ID: Google Cloud Console > OAuth Client ID > Web application 값으로 교체
      *    Authorized JavaScript origins에 GitHub Pages 주소를 등록해야 함.
      */
-    const API_URL = 'https://script.google.com/macros/s/AKfycbztaIur35xJq5QkD3mZFAj_oxVQeqADaKB_fbLytZtapDzE5TxSRmWuqPc8_7eeJif0/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwaqrcGZQrnh9NBALCJ9hYO1z3dubq0CUPRA5TdMWKC5c0OOPi96_L-VK4EZHBm12KB/exec';
     const GOOGLE_CLIENT_ID = '434108168386-jn8hp4mflhn68n98n6m9r1nm6iv7b3qe.apps.googleusercontent.com';
 
     let currentUser = null;
@@ -820,9 +820,9 @@
       $('requiredText').textContent = s.RequiredText;
       $('actualText').textContent = s.ActualText;
       $('recognizedText').textContent = s.RecognizedText;
-      $('focusBonusText').textContent = s.FocusBonusText;
       $('breakText').textContent = s.BreakText;
-      $('holidayWorkText').textContent = s.HolidayWorkText;
+      $('nightText').textContent = s.NightText || '0:00';
+      $('holidayWorkText').textContent = s.HolidayWorkText || '0:00';
       $('overtimeText').textContent = s.OvertimeText;
     }
 
@@ -857,11 +857,11 @@
               근무시간: ${escapeHtml(r.ActualText)}<br>
               인정시간: ${escapeHtml(r.RecognizedText)}
               ${r.BreakMinutes > 0 ? `<br>휴게시간: ${escapeHtml(r.BreakText)}` : ''}
-              ${r.FocusBonusMinutes > 0 ? `<br>FOCUS 인정: ${escapeHtml(r.FocusBonusText)}` : ''}
+              ${r.NightMinutes > 0 ? `<br>야간근무: ${escapeHtml(r.NightText)}` : ''}
+              ${r.HolidayWorkMinutes > 0 ? `<br>휴일근무: ${escapeHtml(r.HolidayWorkText)}` : ''}
             </div>
 
             <div class="work-badges">
-              ${r.IsFocusDay ? '<span class="badge focus">FOCUS DAY</span>' : ''}
               ${r.IsHoliday ? `<span class="badge holiday">${escapeHtml(r.HolidayName || '공휴일')}</span>` : ''}
               ${r.Type1 === '건강검진' || r.Type2 === '건강검진' ? '<span class="badge">건강검진</span>' : ''}
             </div>
@@ -883,7 +883,6 @@
       if (t.includes('재택')) return '🏠';
       if (t.includes('연차')) return '🌴';
       if (t.includes('건강')) return '🏥';
-      if (r.IsFocusDay) return '😊';
       return '💼';
     }
 
@@ -981,7 +980,8 @@
           <div>소정근무시간: ${escapeHtml(m.RequiredText)}</div>
           <div>실제등록근무시간: ${escapeHtml(m.ActualText)}</div>
           <div>인정근무시간: ${escapeHtml(m.RecognizedText)}</div>
-          <div>(FOCUS 인정시간: ${escapeHtml(m.FocusBonusText)} / 초과근무시간: ${escapeHtml(m.OvertimeText)})</div>
+          <div>초과근무시간: ${escapeHtml(m.OvertimeText)}</div>
+          <div>야간근무시간: ${escapeHtml(m.NightText || '0:00')} / 휴일근무시간: ${escapeHtml(m.HolidayWorkText || '0:00')}</div>
         </div>
       `).join('');
     }
