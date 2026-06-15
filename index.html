@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>근무시간 관리</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app">
+    <section id="blockedView" class="center-view hidden">
+      <div class="message-card">
+        <h1>접근 불가</h1>
+        <p id="blockedMessage">승인된 Gmail 계정으로 접속해 주세요.</p>
+        <button id="retryBtn">다시 시도</button>
+      </div>
+    </section>
+
+    <section id="loadingView" class="center-view">
+      <div class="message-card">
+        <h1>근무시간 관리</h1>
+        <p>Gmail 계정 확인 중...</p>
+      </div>
+    </section>
+
+    <section id="mainView" class="hidden">
+      <header class="topbar">
+        <button id="menuBtn" class="icon">☰</button>
+        <div class="title-wrap">
+          <div class="app-title">근무시간 관리</div>
+          <div id="userInfo" class="user-info"></div>
+        </div>
+        <button id="refreshBtn" class="icon">⟳</button>
+      </header>
+
+      <section class="filters">
+        <select id="userSelect" class="hidden"></select>
+        <input id="yearInput" type="number" min="2020" max="2099" />
+        <select id="monthSelect"></select>
+      </section>
+
+      <main>
+        <section id="tabStatus" class="tab-panel">
+          <div class="status-card">
+            <div class="label">Month</div>
+            <div id="statusMonth" class="month-text"></div>
+
+            <div class="status-emoji">😀</div>
+
+            <div class="label">Status</div>
+            <div id="statusMain" class="status-main"></div>
+
+            <div class="label detail-label">Detail</div>
+            <div class="detail-list">
+              <div>-소정근무시간: <span id="requiredText"></span></div>
+              <div>-실제등록근무시간: <span id="actualText"></span></div>
+              <div>-인정근무시간: <span id="recognizedText"></span></div>
+              <div>-FOCUS 인정시간: <span id="focusBonusText"></span></div>
+              <div>-휴게시간: <span id="breakText"></span></div>
+              <div>-공휴일근무시간: <span id="holidayWorkText"></span></div>
+              <div>-초과근무시간: <span id="overtimeText"></span></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tabList" class="tab-panel hidden">
+          <div id="workList" class="work-list"></div>
+          <button id="floatingAddBtn" class="fab">✎</button>
+        </section>
+
+        <section id="tabForm" class="tab-panel hidden">
+          <form id="workForm" class="form-card">
+            <input id="recordId" type="hidden" />
+
+            <div class="form-title-row">
+              <button type="button" id="backFromFormBtn" class="back-btn">←</button>
+              <h2 id="formTitle">근무등록</h2>
+            </div>
+
+            <label>
+              Start Date
+              <input id="dateInput" type="date" required />
+            </label>
+
+            <label>
+              근무지*
+              <select id="type1Input" required></select>
+            </label>
+
+            <label>
+              Start Time*
+              <input id="start1Input" type="time" />
+            </label>
+
+            <label>
+              End Time*
+              <input id="end1Input" type="time" />
+            </label>
+
+            <label>
+              근무지(2)
+              <select id="type2Input"></select>
+            </label>
+
+            <label>
+              Start Time(2)
+              <input id="start2Input" type="time" />
+            </label>
+
+            <label>
+              End Time(2)
+              <input id="end2Input" type="time" />
+            </label>
+
+            <label>
+              Memo
+              <textarea id="memoInput" rows="3"></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button type="button" id="cancelBtn" class="secondary">Cancel</button>
+              <button type="submit" class="save">Save</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="tabChart" class="tab-panel hidden">
+          <div class="chart-card">
+            <h2>당월 차트</h2>
+            <canvas id="monthChart"></canvas>
+          </div>
+        </section>
+
+        <section id="tabMonthly" class="tab-panel hidden">
+          <div class="monthly-header">
+            <div class="year-small">YEAR</div>
+            <div id="monthlyTitle" class="monthly-title"></div>
+          </div>
+          <div id="monthlyList" class="monthly-list"></div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav">
+        <button class="nav-btn active" data-tab="Status">🏃<span>Status</span></button>
+        <button class="nav-btn" data-tab="List">☰<span>LIST</span></button>
+        <button class="nav-btn" data-tab="Form">✎<span>근무등록</span></button>
+        <button class="nav-btn" data-tab="Chart">📉<span>당월 차트</span></button>
+        <button class="nav-btn" data-tab="Monthly">🕘<span>월별 근무시간</span></button>
+      </nav>
+    </section>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>
