@@ -2,7 +2,7 @@
  * GitHub Pages Frontend
  * 반드시 아래 API_URL을 Apps Script Web App URL로 교체하세요.
  */
-const API_URL = 'PUT_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRzDpVK7vS1n1--tLDBxt2iVISgfQ-c2fAua0r4ajfB7y3DlIwNwJzM3gSBn2agN6g/exec';
 
 let currentUser = null;
 let workTypes = [];
